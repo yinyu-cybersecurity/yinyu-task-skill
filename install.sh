@@ -9,6 +9,16 @@ SKILL_NAME="ctf-challenge-creator"
 REPO_DIR="$(cd "$(dirname "$0")" && pwd)"
 CLAUDE_DIR="${HOME}/.claude"
 CODEX_DIR="${CODEX_HOME:-${HOME}/.codex}"
+HAS_CODEX=false
+HAS_CLAUDE=false
+
+command -v codex &>/dev/null && HAS_CODEX=true
+command -v claude &>/dev/null && HAS_CLAUDE=true
+
+if [ "${HAS_CODEX}" = false ] && [ "${HAS_CLAUDE}" = false ]; then
+    echo "ERROR: Neither Codex nor Claude Code was detected in PATH."
+    exit 1
+fi
 
 echo ""
 echo "╔══════════════════════════════════════════╗"
@@ -35,48 +45,68 @@ fi
 
 # === Step 3: Create directories ===
 echo "[3/6] Creating directories..."
-mkdir -p "${CLAUDE_DIR}/skills"
-mkdir -p "${CLAUDE_DIR}/agents"
-mkdir -p "${CODEX_DIR}/skills"
+[ "${HAS_CODEX}" = true ] && mkdir -p "${CODEX_DIR}/skills"
+if [ "${HAS_CLAUDE}" = true ]; then
+    mkdir -p "${CLAUDE_DIR}/skills"
+    mkdir -p "${CLAUDE_DIR}/agents"
+fi
 echo "  Directories ready"
 
 # === Step 4: Install skill files ===
 echo "[4/6] Installing skill links..."
 rm -rf "${HOME}/.agents/skills/${SKILL_NAME}"
-rm -rf "${CODEX_DIR}/skills/${SKILL_NAME}"
-rm -rf "${CLAUDE_DIR}/skills/${SKILL_NAME}"
-ln -s "${REPO_DIR}" "${CODEX_DIR}/skills/${SKILL_NAME}"
-ln -s "${REPO_DIR}" "${CLAUDE_DIR}/skills/${SKILL_NAME}"
+if [ "${HAS_CODEX}" = true ]; then
+    rm -rf "${CODEX_DIR}/skills/${SKILL_NAME}"
+    ln -s "${REPO_DIR}" "${CODEX_DIR}/skills/${SKILL_NAME}"
+fi
+if [ "${HAS_CLAUDE}" = true ]; then
+    rm -rf "${CLAUDE_DIR}/skills/${SKILL_NAME}"
+    ln -s "${REPO_DIR}" "${CLAUDE_DIR}/skills/${SKILL_NAME}"
+fi
 
 echo "  Skill files installed"
 
 # === Step 5: Install agent ===
 echo "[5/6] Installing agent definition..."
-for agent_file in "${REPO_DIR}/agents/"*.md; do
-    if [ -f "$agent_file" ]; then
-        agent_name=$(basename "$agent_file")
-        cp "$agent_file" "${CLAUDE_DIR}/agents/${agent_name}"
-        echo "  Agent: ${agent_name}"
-    fi
-done
+if [ "${HAS_CLAUDE}" = true ]; then
+    for agent_file in "${REPO_DIR}/agents/"*.md; do
+        if [ -f "$agent_file" ]; then
+            agent_name=$(basename "$agent_file")
+            cp "$agent_file" "${CLAUDE_DIR}/agents/${agent_name}"
+            echo "  Agent: ${agent_name}"
+        fi
+    done
+else
+    echo "  Claude Code not detected; skipped"
+fi
 echo "  Agent definitions installed"
 
 # === Step 6: Verify ===
 echo "[6/6] Verifying installation..."
 ERRORS=0
 
-if [ -L "${CLAUDE_DIR}/skills/${SKILL_NAME}" ] && [ -L "${CODEX_DIR}/skills/${SKILL_NAME}" ]; then
-    echo "  Skill symlinks: OK"
-else
-    echo "  Skill symlinks: MISSING"
-    ERRORS=$((ERRORS + 1))
+if [ "${HAS_CODEX}" = true ]; then
+    if [ -L "${CODEX_DIR}/skills/${SKILL_NAME}" ]; then
+        echo "  Codex skill symlink: OK"
+    else
+        echo "  Codex skill symlink: MISSING"
+        ERRORS=$((ERRORS + 1))
+    fi
 fi
 
-if ls "${CLAUDE_DIR}/agents/ctf-reviewer.md" &>/dev/null; then
-    echo "  ctf-reviewer agent: OK"
-else
-    echo "  ctf-reviewer agent: MISSING"
-    ERRORS=$((ERRORS + 1))
+if [ "${HAS_CLAUDE}" = true ]; then
+    if [ -L "${CLAUDE_DIR}/skills/${SKILL_NAME}" ]; then
+        echo "  Claude skill symlink: OK"
+    else
+        echo "  Claude skill symlink: MISSING"
+        ERRORS=$((ERRORS + 1))
+    fi
+    if [ -f "${CLAUDE_DIR}/agents/ctf-reviewer.md" ]; then
+        echo "  ctf-reviewer agent: OK"
+    else
+        echo "  ctf-reviewer agent: MISSING"
+        ERRORS=$((ERRORS + 1))
+    fi
 fi
 
 echo ""
@@ -87,12 +117,13 @@ if [ $ERRORS -eq 0 ]; then
     echo ""
     echo "Installed components:"
     echo "  Source:  ${REPO_DIR}"
-    echo "  Codex:   ${CODEX_DIR}/skills/${SKILL_NAME}/ (symlink)"
-    echo "  Claude:  ${CLAUDE_DIR}/skills/${SKILL_NAME}/ (symlink)"
-    echo "  Agent:   ctf-reviewer"
+    [ "${HAS_CODEX}" = true ] && echo "  Codex:   ${CODEX_DIR}/skills/${SKILL_NAME}/ (symlink)"
+    [ "${HAS_CLAUDE}" = true ] && echo "  Claude:  ${CLAUDE_DIR}/skills/${SKILL_NAME}/ (symlink)"
+    [ "${HAS_CLAUDE}" = true ] && echo "  Agent:   ctf-reviewer"
     echo "  Templates: ${REPO_DIR}/templates/"
     echo ""
-    echo "Usage: Just say 'Create a Web SSTI Easy challenge' to start!"
+    [ "${HAS_CODEX}" = true ] && echo 'Codex usage:  $ctf-challenge-creator Create a Web SSTI Easy challenge'
+    [ "${HAS_CLAUDE}" = true ] && echo 'Claude usage: /ctf-challenge-creator Create a Web SSTI Easy challenge'
     echo ""
     echo "To uninstall:"
     echo "  rm ${CODEX_DIR}/skills/${SKILL_NAME}"

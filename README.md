@@ -30,16 +30,17 @@ bash install.sh        # Linux/Mac
 # install.bat          # Windows
 ```
 
-安装器以当前克隆仓库作为唯一技能源，在 `.codex/skills/ctf-challenge-creator` 和
-`.claude/skills/ctf-challenge-creator` 创建链接，不会在 `.agents/skills` 留下重复副本。
-以后执行 `git pull` 即可同时更新 Codex 和 Claude Code 使用的版本。
+安装器会检测 `codex` 和 `claude` 命令，只为本机已安装的客户端创建入口：检测到 Codex 时，
+在 `$CODEX_HOME/skills/ctf-challenge-creator`（默认 `.codex/skills/...`）创建链接；检测到
+Claude Code 时，在 `.claude/skills/ctf-challenge-creator` 创建链接并安装 Reviewer agent。
+两者都存在时均指向当前仓库这一唯一技能源，不会在 `.agents/skills` 留下重复副本。
 
 安装后重启 Claude Code，并新建 Codex 会话，Skill 即生效。
 
 验证安装：
 
 - Claude Code：输入 `/ctf-challenge-creator`。
-- Codex：提出一条 CTF 出题请求并明确提及 `ctf-challenge-creator`，确认它加载本仓库的 `SKILL.md`。
+- Codex：输入 `$ctf-challenge-creator 创建一个 Web SSTI Easy 动态容器题`。
 
 ## 支持的题型
 
@@ -56,6 +57,18 @@ bash install.sh        # Linux/Mac
 ## 使用方法
 
 在 Codex 或 Claude Code 中用自然语言描述需求即可：
+
+Codex 显式调用：
+
+```text
+$ctf-challenge-creator 创建一个 Web SSTI Easy 难度的动态容器题，使用 Flask
+```
+
+Claude Code 显式调用：
+
+```text
+/ctf-challenge-creator 创建一个 Web SSTI Easy 难度的动态容器题，使用 Flask
+```
 
 ```
 创建一个 Web SSTI Easy 难度的动态容器题，使用 Flask
