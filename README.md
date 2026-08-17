@@ -7,7 +7,7 @@
 
 ## 前置要求
 
-- [Claude Code](https://docs.anthropic.com/en/docs/claude-code) 已安装并登录
+- Codex 或 [Claude Code](https://docs.anthropic.com/en/docs/claude-code) 已安装并可用
 - [Docker](https://docs.docker.com/get-docker/) 已安装并运行
 - Git
 
@@ -24,15 +24,22 @@ Token，不能互相替代。历史题目池回填是例外：它只能由已登
 ## 安装
 
 ```bash
-git clone https://github.com/csc-dsc/ctf-challenge-skill.git
-cd ctf-challenge-skill
+git clone https://github.com/yinyu-cybersecurity/yinyu-task-skill.git
+cd yinyu-task-skill
 bash install.sh        # Linux/Mac
 # install.bat          # Windows
 ```
 
-安装后**重启 Claude Code**（退出终端重新打开），Skill 即生效。
+安装器以当前克隆仓库作为唯一技能源，在 `.codex/skills/ctf-challenge-creator` 和
+`.claude/skills/ctf-challenge-creator` 创建链接，不会在 `.agents/skills` 留下重复副本。
+以后执行 `git pull` 即可同时更新 Codex 和 Claude Code 使用的版本。
 
-验证安装：在 Claude Code 中输入 `/ctf-challenge-creator`，如果显示 Skill 加载成功即可。
+安装后重启 Claude Code，并新建 Codex 会话，Skill 即生效。
+
+验证安装：
+
+- Claude Code：输入 `/ctf-challenge-creator`。
+- Codex：提出一条 CTF 出题请求并明确提及 `ctf-challenge-creator`，确认它加载本仓库的 `SKILL.md`。
 
 ## 支持的题型
 
@@ -48,7 +55,7 @@ bash install.sh        # Linux/Mac
 
 ## 使用方法
 
-在 Claude Code 中用自然语言描述需求即可：
+在 Codex 或 Claude Code 中用自然语言描述需求即可：
 
 ```
 创建一个 Web SSTI Easy 难度的动态容器题，使用 Flask
@@ -93,7 +100,7 @@ SHA256、异步 operation ID 和平台资源 ID。仅重试失败项；未知写
 
 ```
 用户描述需求
-  → Claude 分析并确定题型
+  → Codex 或 Claude Code 分析并确定题型
   → 创建完整题目交付包（源码、docker/、awdp/、README 等）
   → 本地 docker build + compose up → healthy
   → Checker 测试 → OK
@@ -274,7 +281,7 @@ CLI 在缺少平台地址时会明确报错并给出 `GZCTF_HOST` 示例；地�
 
 ```
 ctf-challenge-skill/
-├── SKILL.md                   # Skill 主定义（Claude Code 入口）
+├── SKILL.md                   # Skill 主定义（Codex / Claude Code 入口）
 ├── README.md                  # 本文件
 ├── install.sh / install.bat   # 安装脚本
 ├── agents/
